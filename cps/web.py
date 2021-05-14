@@ -1584,7 +1584,22 @@ def profile():
 # ###################################Show single book ##################################################################
 
 
-@web.route("/read/<int:book_id>/<book_format>")
+def get_cfi(book_id):
+    return ub.session.query(ub.Cfi).filter(and_(ub.Cfi.user_id == int(current_user.id)),
+                                    ub.Cfi.book_id == book_id).first()
+
+
+def save_cfi(book_id, data):
+    cfi = get_cfi(book_id)
+    if cfi == None:
+        new_cfi = ub.Cfi(user_id=int(current_user.id), book_id=book_id, cfi=data)
+        ub.session.add(new_cfi)
+    else:
+        cfi.cfi = data
+    ub.session.commit()
+
+
+@web.route("/read/<int:book_id>/<book_format>", methods=['GET', 'POST'])
 @login_required_if_no_ano
 @viewer_required
 def read_book(book_id, book_format):
@@ -1612,6 +1627,16 @@ def read_book(book_id, book_format):
     elif book_format.lower() == "djvu":
         log.debug(u"Start djvu reader for %d", book_id)
         return render_title_template('readdjvu.html', djvufile=book_id, title=_(u"Read a Book"))
+    elif book_format.lower() == "cfi":
+        if request.method == "GET":
+            cfi = get_cfi(book_id)
+            if cfi == None:
+                return '', 404
+            else:
+                return cfi.cfi
+        elif request.method == "POST":
+            save_cfi(book_id, request.data)
+            return '', 204
     else:
         for fileExt in constants.EXTENSIONS_AUDIO:
             if book_format.lower() == fileExt:

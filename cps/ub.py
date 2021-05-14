@@ -342,6 +342,14 @@ class ArchivedBook(Base):
     is_archived = Column(Boolean, unique=False)
     last_modified = Column(DateTime, default=datetime.datetime.utcnow)
 
+class Cfi(Base):
+    __tablename__ = 'cfi'
+
+    id = Column(Integer, primary_key=True)
+    user_id = Column(Integer, ForeignKey('user.id'))
+    book_id = Column(Integer)
+    cfi = Column(String)
+
 
 # The Kobo ReadingState API keeps track of 4 timestamped entities:
 #   ReadingState, StatusInfo, Statistics, CurrentBookmark
@@ -451,6 +459,8 @@ def add_missing_tables(engine, session):
         KoboStatistics.__table__.create(bind=engine)
     if not engine.dialect.has_table(engine.connect(), "archived_book"):
         ArchivedBook.__table__.create(bind=engine)
+    if not engine.dialect.has_table(engine.connect(), "cfi"):
+        Cfi.__table__.create(bind=engine)
     if not engine.dialect.has_table(engine.connect(), "registration"):
         Registration.__table__.create(bind=engine)
         with engine.connect() as conn:
